@@ -10,6 +10,9 @@ public class Register {
 		String code = eu.encrypt("20200601");
 		System.out.println(code);
 		System.out.println(eu.decrypt(code));
+		code = eu.encrypt("20250601");
+		System.out.println(code);
+		System.out.println(eu.decrypt(code));
 	}
 
 }
