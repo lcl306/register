@@ -13,6 +13,9 @@ public class Register {
 		code = eu.encrypt("20250601");
 		System.out.println(code);
 		System.out.println(eu.decrypt(code));
+		code = eu.encrypt("20300601");
+		System.out.println(code);
+		System.out.println(eu.decrypt(code));
 	}
 
 }
