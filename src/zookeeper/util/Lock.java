@@ -8,13 +8,24 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 
 public abstract class Lock extends BaseWatcher {
-	
-	static final String LOCK_ROOT = "/lock";
 
 	protected String myNode;
 	
-	public Lock(String host) {
-		super(host, LOCK_ROOT);
+	public Lock(String host, String root) {
+		super(host, root);
+	}
+	
+	/**
+	 * zookeeper异常关闭，可能临时节点没有释放
+	 * */
+	public void clear(){
+		try {
+			for(String n : this.getAllChildren(false)){
+				this.delete("/"+n);
+			}
+		} catch (InterruptedException | KeeperException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void init(){
@@ -39,14 +50,17 @@ public abstract class Lock extends BaseWatcher {
 	}
 	
 	void getLock()throws InterruptedException, KeeperException{
-		List<String> list = super.getAllChildren(false);
-		String[] nodes = list.toArray(new String[]{});
-		Arrays.sort(nodes);
-		//如果第一个node和自己的node相同，执行业务，否则等待锁
-		if(nodes[0].equals(myNode)){
-			doAction();
-		}else if(!list.isEmpty()){
-			waitForLock(nodes[0]);
+		List<String> list = this.getAllChildren(false);
+		if(!list.isEmpty()){
+			String[] nodes = list.toArray(new String[]{});
+			Arrays.sort(nodes);
+			//如果第一个node和自己的node相同，执行业务，否则等待锁
+			System.out.println(Thread.currentThread().getName()+"_"+list.size()+"_"+nodes[0]+"_"+myNode);
+			if(nodes[0].equals(myNode)){
+				doAction();
+			}else{
+				waitForLock(nodes[0]);
+			}
 		}
 	}
 	
@@ -56,9 +70,9 @@ public abstract class Lock extends BaseWatcher {
 			synchronized(mutex){
 				mutex.wait();
 			}
-		}else{
-			getLock();
 		}
+		//一旦notifyAll后，所有被锁Thread都会去执行getLock方法
+		getLock();
 	}
 	
 	@Override
