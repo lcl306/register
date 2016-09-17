@@ -16,19 +16,19 @@ public abstract class SyncQueue<T> extends BaseWatcher {
 		this.start = start;
 	}
 	
-	public void submit(String node) throws KeeperException, InterruptedException{
+	public T submit(String node) throws KeeperException, InterruptedException{
 		prepare();
 		this.create("/"+node, new byte[0], CreateMode.EPHEMERAL_SEQUENTIAL);
 		this.exist("/"+start, true); // watch node的create，事件EventType.NodeCreated
 		if(this.getAllChildren(false).size()==size){
 			this.create("/"+start, null, CreateMode.EPHEMERAL);
 			this.setData("/"+start, new byte[0]);
-			get(size);
+			return get(size);
 		}else{
 			synchronized(mutex){
 				mutex.wait();
 			}
-			get(this.getAllChildren(false).size());
+			return get(this.getAllChildren(false).size());
 		}
 	}
 	
