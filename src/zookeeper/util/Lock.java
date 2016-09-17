@@ -15,19 +15,6 @@ public abstract class Lock extends BaseWatcher {
 		super(host, root);
 	}
 	
-	/**
-	 * zookeeper异常关闭，可能临时节点没有释放
-	 * */
-	public void clear(){
-		try {
-			for(String n : this.getAllChildren(false)){
-				this.delete("/"+n);
-			}
-		} catch (InterruptedException | KeeperException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	public void init(){
 		try {
 			//保证了/lock_节点创建的顺序性
@@ -78,6 +65,7 @@ public abstract class Lock extends BaseWatcher {
 	@Override
 	public void process(WatchedEvent event){
 		//如果是删除node，则释放锁
+		//操作delete，exist观察，事件EventType.NodeDeleted
 		if(event.getPath().startsWith(this.root+"/") && event.getType()==Event.EventType.NodeDeleted){
 			super.process(event);
 		}

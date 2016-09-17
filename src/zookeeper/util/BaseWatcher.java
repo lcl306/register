@@ -13,6 +13,8 @@ import org.apache.zookeeper.data.Stat;
 
 public class BaseWatcher implements Watcher {
 	
+	public static final String CODING = "UTF-8";
+	
 	protected static ZooKeeper zk = null;
 	
 	protected int SESSION_TIMEOUT = 6000;
@@ -42,6 +44,10 @@ public class BaseWatcher implements Watcher {
 	 * */
 	@Override
 	public void process(WatchedEvent event) {
+		this.process(event, mutex);
+	}
+	
+	protected void process(WatchedEvent event, Integer mutex) {
 		System.out.println(this.getClass().getName()+"响应"+event.getPath()+"的事件："+event.getType().name()+": 连接状态="+event.getState().name());
 		synchronized(mutex){
 			mutex.notifyAll();
@@ -58,6 +64,11 @@ public class BaseWatcher implements Watcher {
 			path = p.substring(root.length()+1);
 		}
 		return path;
+	}
+	
+	public String createExistError(String path, byte[] data, CreateMode createMode)throws KeeperException, InterruptedException{
+		String p = zk.create(root+path, data, ZooDefs.Ids.OPEN_ACL_UNSAFE, createMode);
+		return p.substring(root.length()+1);
 	}
 	
 	public List<String> getAllChildren(boolean watch)throws InterruptedException, KeeperException{
@@ -110,6 +121,19 @@ public class BaseWatcher implements Watcher {
 		if(s!=null){
 			zk.delete(root+path, s.getVersion());
 		} 
+	}
+	
+	/**
+	 * zookeeper异常关闭，可能临时节点没有释放
+	 * */
+	public void clear(){
+		try {
+			for(String n : this.getAllChildren(false)){
+				this.delete("/"+n);
+			}
+		} catch (InterruptedException | KeeperException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void close()throws InterruptedException{
