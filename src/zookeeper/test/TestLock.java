@@ -17,7 +17,7 @@ public class TestLock {
 			executor.execute(new Runnable(){
 				@Override
 				public void run() {
-					new TestLock.MyLock().init();
+					new TestLock.MyLock().lock();
 				}
 			});
 		}

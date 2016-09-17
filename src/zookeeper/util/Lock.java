@@ -15,7 +15,7 @@ public abstract class Lock extends BaseWatcher {
 		super(host, root);
 	}
 	
-	public void init(){
+	public void lock(){
 		try {
 			//保证了/lock_节点创建的顺序性
 			myNode = this.create("/task_", new byte[0], CreateMode.EPHEMERAL_SEQUENTIAL);
@@ -66,6 +66,7 @@ public abstract class Lock extends BaseWatcher {
 	public void process(WatchedEvent event){
 		//如果是删除node，则释放锁
 		//操作delete，exist观察，事件EventType.NodeDeleted
+		//操作create，exist管材，事件EventType.NodeCreated
 		if(event.getPath().startsWith(this.root+"/") && event.getType()==Event.EventType.NodeDeleted){
 			super.process(event);
 		}
