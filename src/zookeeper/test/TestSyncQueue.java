@@ -1,7 +1,12 @@
 package zookeeper.test;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.zookeeper.KeeperException;
 
@@ -15,19 +20,30 @@ public class TestSyncQueue {
 
 	public static void main(String[] args) {
 		new TestSyncQueue.MySyncQueue(POOL_SIZE).clear();
+		List<Future<Integer>> list = new ArrayList<>();
 		for(int i=0; i<POOL_SIZE; i++){
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			executor.execute(new Runnable(){
+			Future<Integer> f = executor.submit(new Callable<Integer>(){
 				@Override
-				public void run() {
-					new TestSyncQueue.MySyncQueue(POOL_SIZE).submit();
+				public Integer call() throws Exception {
+					return new TestSyncQueue.MySyncQueue(POOL_SIZE).submit();
 				}
 			});
+			list.add(f);
 		}
+		int sum = 0;
+		for(Future<Integer> f : list){
+			 try {
+				sum +=f.get();
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("------------------total=" +sum);
 		executor.shutdown();
 	}
 	
@@ -54,12 +70,13 @@ public class TestSyncQueue {
 			return new Integer(sum);
 		}
 		
-		public void submit(){
+		public Integer submit(){
 			try {
-				super.submit(MEMBER);
+				return super.submit(MEMBER);
 			} catch (KeeperException | InterruptedException e) {
 				e.printStackTrace();
 			}
+			return 0;
 		}
 
 		@Override
