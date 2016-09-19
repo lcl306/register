@@ -1,4 +1,4 @@
-package mina.filter.mytextline;
+package minas.mina.filter.mytextline;
 
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;

@@ -1,4 +1,4 @@
-package mina.filter.myprotocol;
+package minas.mina.filter.myprotocol;
 
 import org.apache.mina.filter.codec.demux.DemuxingProtocolCodecFactory;
 

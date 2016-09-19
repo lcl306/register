@@ -1,8 +1,8 @@
-package test;
+package minas.test;
 
-import mina.filter.myprotocol.ProgrammeDto;
-import mina.filter.myprotocol.RequestMessage;
-import mina.filter.myprotocol.ResponseMessage;
+import minas.mina.filter.myprotocol.ProgrammeDto;
+import minas.mina.filter.myprotocol.RequestMessage;
+import minas.mina.filter.myprotocol.ResponseMessage;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.core.service.IoHandlerAdapter;

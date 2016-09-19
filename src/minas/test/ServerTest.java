@@ -1,6 +1,6 @@
-package test;
+package minas.test;
 
-import mina.ServerUtil;
+import minas.mina.ServerUtil;
 
 
 public class ServerTest {

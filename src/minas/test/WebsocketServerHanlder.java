@@ -1,8 +1,6 @@
-package test;
+package minas.test;
 
 import java.util.Date;
-
-import mina.filter.websocket.WebSocketHandShakeResponse;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.core.service.IoHandlerAdapter;

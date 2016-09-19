@@ -1,4 +1,4 @@
-package mina;
+package minas.mina;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 
-import mina.filter.myprotocol.ProgrammeMessageDecoder;
-import mina.filter.myprotocol.ProgrammeMessageEncoder;
-import mina.filter.myprotocol.ProgrammeMessageFactory;
-import mina.filter.websocket.WebSocketCodecFactory;
+import minas.mina.filter.myprotocol.ProgrammeMessageDecoder;
+import minas.mina.filter.myprotocol.ProgrammeMessageEncoder;
+import minas.mina.filter.myprotocol.ProgrammeMessageFactory;
+import minas.mina.filter.websocket.WebSocketCodecFactory;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.core.filterchain.IoFilter;

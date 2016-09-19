@@ -1,4 +1,4 @@
-package test;
+package minas.test;
 
 import java.util.Date;
 

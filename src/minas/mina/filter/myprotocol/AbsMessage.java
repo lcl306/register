@@ -1,4 +1,5 @@
-package mina.filter.myprotocol;
+package minas.mina.filter.myprotocol;
+
 
 import java.nio.charset.Charset;
 

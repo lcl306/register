@@ -1,7 +1,7 @@
-package test;
+package minas.test;
 
-import mina.ClientUtil;
-import mina.filter.myprotocol.RequestMessage;
+import minas.mina.ClientUtil;
+import minas.mina.filter.myprotocol.RequestMessage;
 
 public class ClientTest {
 	

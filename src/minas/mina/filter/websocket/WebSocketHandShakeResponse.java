@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package mina.filter.websocket;
+package minas.mina.filter.websocket;
 
 /**
  * Wraps around a string that represents a websocket handshake response from

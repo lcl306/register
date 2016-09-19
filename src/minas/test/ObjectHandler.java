@@ -1,4 +1,4 @@
-package test;
+package minas.test;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.core.service.IoHandlerAdapter;
