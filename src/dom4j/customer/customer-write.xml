@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="GBK"?>
+
+<cust-root>
+  <customer cust-id="001">
+    <!--这里是注释-->
+    <person>
+      <cust-num>123456789</cust-num>
+      <first-name>崔兵</first-name>
+      <last-name>Smith</last-name>
+    </person>
+    <street>12345 Happy Lane</street>
+    <city>Plunk</city>
+    <state>WA</state>
+    <zip>98059</zip>
+    <phone>888.555.1234</phone>
+  </customer>
+  <customer cust-id="002">
+    <!--这里是注释-->
+    <person>
+      <cust-num>123456780</cust-num>
+      <first-name>崔兵</first-name>
+      <last-name>Smith</last-name>
+    </person>
+    <street>12345 Happy Lane</street>
+    <city>Plunk</city>
+    <state>WA</state>
+    <zip>98059</zip>
+    <phone>888.555.1234</phone>
+  </customer>
+</cust-root>

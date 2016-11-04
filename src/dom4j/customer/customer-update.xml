@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="GBK"?>
+
+<cust-root> 
+  <customer cust-id="11"> 
+    <person sex="Male"> 
+      <cust-num>123456789</cust-num>
+      <!--如果没有age属性，默认的为20-->  
+      <first-name>崔兵</first-name>  
+      <date>2007-09-30</date>
+    </person>  
+    <street>12345 Happy Lane</street>  
+    <city>Plunk</city>  
+    <state>WA</state>  
+    <zip>98059</zip>  
+    <phone>888.555.1234</phone> 
+  </customer>  
+  <customer cust-id="12"> 
+    <person sex="Male"> 
+      <cust-num>123456780</cust-num>  
+      <first-name>崔兵</first-name>  
+      <date>2007-09-30</date>
+    </person>  
+    <street>12345 Happy Lane</street>  
+    <city>Plunk</city>  
+    <state>WA</state>  
+    <zip>98059</zip>  
+    <phone>888.555.1234</phone> 
+  </customer> 
+</cust-root>
