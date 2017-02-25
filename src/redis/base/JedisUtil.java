@@ -15,6 +15,9 @@ import java.util.Map;
 import java.util.Set;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 import util.BytesUtil;
 
 public class JedisUtil {
@@ -36,11 +39,31 @@ public class JedisUtil {
 		void exec(Jedis jedis);
 	}
 	
+	public static interface MultiCallback{
+		
+		void exec(Transaction tx);
+	}
+	
 	public static void connect(Callback callback){
 		Jedis jedis = new Jedis(host, port);
 		jedis.auth(password);
 		callback.exec(jedis);
 		jedis.close();
+	} 
+	
+	public static void connect(MultiCallback callback){
+		Jedis jedis = new Jedis(host, port);
+		jedis.auth(password);
+		Transaction tx = jedis.multi();
+		try{
+			callback.exec(tx);
+			tx.exec();
+		}catch(Throwable t){
+			tx.discard();
+			t.printStackTrace();
+		}finally{
+			jedis.close();
+		}
 	} 
 	
 	public static String setObj(Jedis jedis, String key, Object obj){
@@ -51,29 +74,63 @@ public class JedisUtil {
 		return object(jedis.get(getKeyByte(key)));
 	}
 	
-	public static <T> Long rpush(Jedis jedis, String key, List<T> list){
+	public static Response<String> setObj(Transaction tx, String key, Object obj){
+		return tx.set(getKeyByte(key), bytes(obj));
+	}
+	
+	public static Response<String> setObj(Pipeline pl, String key, Object obj){
+		return pl.set(getKeyByte(key), bytes(obj));
+	}
+	
+	public static <J,T> Long rpush(J j, String key, List<T> list){
 		long num = 0;
+		Jedis jedis = null;
+		Transaction tx = null;
+		Pipeline pl = null;
+		if(j instanceof Jedis) jedis = (Jedis)j;
+		if(j instanceof Transaction) tx = (Transaction)j;
+		if(j instanceof Pipeline) pl = (Pipeline)j;
 		if(list!=null && !list.isEmpty()){
 			for(T t : list){
-				num += jedis.rpush(getKeyByte(key), bytes(t));
+				if(jedis!=null)
+					num += jedis.rpush(getKeyByte(key), bytes(t));
+				else if(tx!=null)
+					tx.rpush(getKeyByte(key), bytes(t));
+				else if(pl!=null)
+					pl.rpush(getKeyByte(key), bytes(t));
 			}
 		}
 		return num;
 	}
 	
-	public static <T> Long lpush(Jedis jedis, String key, List<T> list){
+	public static <J,T> Long lpush(J j, String key, List<T> list){
 		long num = 0;
+		Jedis jedis = null;
+		Transaction tx = null;
+		Pipeline pl = null;
+		if(j instanceof Jedis) jedis = (Jedis)j;
+		if(j instanceof Transaction) tx = (Transaction)j;
+		if(j instanceof Pipeline) pl = (Pipeline)j;
 		if(list!=null && !list.isEmpty()){
 			for(T t : list){
-				num += jedis.lpush(getKeyByte(key), bytes(t));
+				if(jedis!=null)
+					num += jedis.lpush(getKeyByte(key), bytes(t));
+				else if(tx!=null)
+					tx.lpush(getKeyByte(key), bytes(t));
+				else if(pl!=null)
+					pl.lpush(getKeyByte(key), bytes(t));
 			}
 		}
 		return num;
+	}
+	
+	
+	public static <T> List<T> lrange(Jedis jedis, String key){
+		return change(jedis.lrange(getKeyByte(key), 0, jedis.llen(getKeyByte(key))));
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> lrange(Jedis jedis, String key){
-		List<byte[]> l = jedis.lrange(getKeyByte(key), 0, jedis.llen(getKeyByte(key)));
+	public static <T> List<T> change(List<byte[]> l){
 		List<T> list = null;
 		if(l!=null){
 			list = new ArrayList<>();
@@ -91,8 +148,15 @@ public class JedisUtil {
 	/**
 	 * redis是按照hash储存map的，treeMap放入，得到的也是HashMap
 	 * Map的key必须为String、Long、Integer、Short、Byte
+	 * Pipeline用于批量处理
 	 * */
-	public static <K,V> String hmset(Jedis jedis, String key, Map<K,V> map){
+	public static <J,K,V> String hmset(J j, String key, Map<K,V> map){
+		Jedis jedis = null;
+		Transaction tx = null;
+		Pipeline pl = null;
+		if(j instanceof Jedis) jedis = (Jedis)j;
+		if(j instanceof Transaction) tx = (Transaction)j;
+		if(j instanceof Pipeline) pl = (Pipeline)j;
 		Map<byte[], byte[]> m = new HashMap<>();
 		String keyType = null;
 		if(map!=null){
@@ -102,7 +166,12 @@ public class JedisUtil {
 			}
 			m.put(getKeyByte(JEDIS_MAP_TYPE), bytes(map.getClass().getName()));
 			m.put(getKeyByte(JEDIS_MAP_KEYTYPE), bytes(keyType));
-			return jedis.hmset(getKeyByte(key), m);
+			if(jedis!=null)
+				return jedis.hmset(getKeyByte(key), m);
+			else if(tx!=null)
+				tx.hmset(getKeyByte(key), m);
+			else if(pl!=null)
+				pl.hmset(getKeyByte(key), m);
 		}
 		return null;
 	}
@@ -110,9 +179,12 @@ public class JedisUtil {
 	/**
 	 * 返回Map<Serializable, Object>, Serializable只可以是String、Long、Integer、Short、Byte
 	 * */
-	@SuppressWarnings("unchecked")
 	public static <K,V> Map<K,V> hgetall(Jedis jedis, String key){
-		Map<byte[], byte[]> m = jedis.hgetAll(getKeyByte(key));
+		return change(jedis, key, jedis.hgetAll(getKeyByte(key)));
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <K,V> Map<K,V> change(Jedis jedis, String key, Map<byte[], byte[]> m){
 		Map<K, V> map = null;
 		if(m!=null && !m.isEmpty()){
 			try {
@@ -138,19 +210,41 @@ public class JedisUtil {
 		return jedis.hdel(getKeyByte(key), getKeyByte(propKey));
 	}
 	
-	public static <T> Long sadd(Jedis jedis, String key, Set<T> set){
+	public static <K> Response<Long> hdel(Transaction tx, String key, K propKey){
+		return tx.hdel(getKeyByte(key), getKeyByte(propKey));
+	}
+	
+	public static <K> Response<Long> hdel(Pipeline pl, String key, K propKey){
+		return pl.hdel(getKeyByte(key), getKeyByte(propKey));
+	}
+	
+	public static <J,T> Long sadd(J j, String key, Set<T> set){
+		Jedis jedis = null;
+		Transaction tx = null;
+		Pipeline pl = null;
+		if(j instanceof Jedis) jedis = (Jedis)j;
+		if(j instanceof Transaction) tx = (Transaction)j;
+		if(j instanceof Pipeline) pl = (Pipeline)j;
 		Long num = 0l;
 		if(set!=null && !set.isEmpty()){
 			for(T t : set){
-				num +=jedis.sadd(getKeyByte(key), bytes(t));
+				if(jedis!=null)
+					num +=jedis.sadd(getKeyByte(key), bytes(t));
+				else if(tx!=null)
+					tx.sadd(getKeyByte(key), bytes(t));
+				else if(pl!=null)
+					pl.sadd(getKeyByte(key), bytes(t));
 			}
 		}
 		return num;
 	}
+
+	public static <T> HashSet<T> smembers(Jedis jedis, String key){
+		return change(jedis.smembers(getKeyByte(key)));
+	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> HashSet<T> smembers(Jedis jedis, String key){
-		Set<byte[]> s = jedis.smembers(getKeyByte(key));
+	public static <T> HashSet<T> change(Set<byte[]> s){
 		HashSet<T> set = null;
 		if(s!=null){
 			set = new HashSet<>();

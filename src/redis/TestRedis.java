@@ -30,8 +30,18 @@ public class TestRedis {
 				execList(jedis);
 				System.out.println("--------------exec set ----------------");
 				execSet(jedis);
+				System.out.println("--------------exec hyperlog ----------------");
+				hyperlog(jedis);
 			}
 		});
+	}
+	
+	public static void hyperlog(Jedis jedis){
+		jedis.pfadd("pflist", "apple", "cherry", "durian", "mongo", "cherry");
+		System.out.println(jedis.pfcount("pflist"));
+		jedis.pfadd("pflist2", "apple", "cherry", "banana");
+		jedis.pfmerge("pfmlist&2", "pflist2", "pflist");
+		System.out.println(jedis.pfcount("pfmlist&2"));
 	}
 	
 	public static void execSet(Jedis jedis){
