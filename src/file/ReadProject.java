@@ -18,17 +18,17 @@ import excel.ExcelWriter;
 
 public class ReadProject {
 	
-	private String readFileName = "D:/迅雷下载/贵州老干妈_开发工程表.xlsx";
+	private String readFileName = "C:/文档/大福/科尔沁/科尔沁_开发工程表.xlsx";
 	
-	private String writeFileName = "D:/迅雷下载/贵州老干妈_开发工程表Write.xlsx";
+	private String writeFileName = "C:/文档/大福/科尔沁/科尔沁_开发工程表write.xlsx";
 	
 	private String sheetName = "工程";
 	
-	private String startCellName = "P8";
+	private String startCellName = "P6";
 	
-	private String endCellName = "FK8";
+	private String endCellName = "HU6";
 	
-	private int endRow = 61;
+	private int endRow = 45;
 	
 	
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -42,6 +42,8 @@ public class ReadProject {
 	
 	//private short color = IndexedColors.LEMON_CHIFFON.getIndex();
 	private short color = IndexedColors.LIGHT_GREEN.getIndex();
+	
+	//private short void_color = IndexedColors.WHITE.getIndex();
 	
 	public ReadProject(){
 		initSheet();
@@ -115,6 +117,10 @@ public class ReadProject {
 	public void fillColor(Cell cell){
 		int row = cell.getRowIndex();
 		int col = cell.getColumnIndex();
+		/*for(int i=row; i<endRow; i++){
+			Cell c = ExcelDoc.readCell(sheet, i, col);
+			ExcelDoc.setColor(workbook, c, void_color);
+		}*/
 		Date date = cell.getDateCellValue();
 		int w = HolidayUtil.getWeek(date);
 		if(w==0 || w==6 || HolidayUtil.isHoliday(date)){
