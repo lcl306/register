@@ -22,10 +22,47 @@ public class CompareFileUtil {
 	 * 将dirT和dirS的文件做比较，将dirT不同于dirS的文件写入CompareFile的diffFiles和diffFiles中。
 	 * */
 	public static CompareFileUtil compareFiles(File dirS, File dirT, CompareFileUtil cf){
-		cf.getStandardFiles(dirS);
+		cf.getStandardFiles(dirS, cf.sourcePrefix);
 		cf.compareFiles(dirT);
 		cf.fileNames.clear();
 		return cf;
+	}
+	
+	/**
+	 * 将dirT和dirS的文件做比较，复制dirT不存在的文件或dirT的旧文件。
+	 * */
+	public static CompareFileUtil copyFiles(File dirS, File dirT, boolean copyFlag){
+		CompareFileUtil cf = new CompareFileUtil();
+		cf.getStandardFiles(dirT, dirT.getPath()+File.separator);
+		cf.copyFiles(dirS, dirS.getPath()+File.separator, dirT.getPath()+File.separator, copyFlag);
+		cf.fileNames.clear();
+		return cf;
+	}
+	
+	private void copyFiles(File dirS, String sourcePath, String targetPath, boolean copyFlag){
+		if(dirS.isDirectory() && dirS.exists()){
+			File[] files = dirS.listFiles();
+ 			for(File f : files){
+				if(f.exists() && !isExcludeFile(f)){
+					if(f.isDirectory() && isIncludeDir(f)){
+						copyFiles(f, sourcePath, targetPath, copyFlag);
+					}else if(!f.isDirectory()){
+						String srcFileName = getFileName(f, sourcePath);
+						File t = fileNames.get(srcFileName);
+						if(t==null){
+							addedFiles.put(srcFileName, f);
+							if(copyFlag) FileCopyUtil.copy(f, new File(targetPath+srcFileName));
+						}else if(isUpdateFile(f, t)){
+							diffFiles.put(srcFileName, f);
+							if(copyFlag){
+								t.delete();
+								FileCopyUtil.copy(f, new File(targetPath+srcFileName));
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	private void compareFiles(File dirT){
@@ -58,15 +95,15 @@ public class CompareFileUtil {
 	
 	Map<String, File> addedFiles = new TreeMap<>();
 	
-	private void getStandardFiles(File dirS){
+	private void getStandardFiles(File dirS, String prefix){
 		if(dirS.isDirectory() && dirS.exists()){
 			File[] files = dirS.listFiles();
 			for(File f : files){
 				if(f.exists() && !isExcludeFile(f)){
 					if(f.isDirectory() && isIncludeDir(f)){
-						getStandardFiles(f);
+						getStandardFiles(f, prefix);
 					}else if(!f.isDirectory()){
-						fileNames.put(getFileName(f, sourcePrefix), f);
+						fileNames.put(getFileName(f, prefix), f);
 					}
 				}
 			}
@@ -85,14 +122,19 @@ public class CompareFileUtil {
 			for(String ir : includeDirs){
 				if(dir!=null && dir.getPath().indexOf(File.separator+ir)!=-1) return true;
 			}
+			return false;
 		}
-		return false;
+		return true;
 	}
 	
 	public static boolean same(File file1, File file2){
 		String file1MD5 = getFileMD5(file1);
 		if(file1MD5==null) return false;
 		return file1MD5.equals(getFileMD5(file2));
+	}
+	
+	public static boolean isUpdateFile(File src, File target){
+		return src.lastModified() > target.lastModified();
 	}
 	
 	/**

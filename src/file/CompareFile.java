@@ -20,7 +20,8 @@ public class CompareFile {
 		if(!same(file1, file2)){
 			System.out.println(file2.getName());
 		}*/
-		printDiffFile();
+		//printDiffFile();
+		cpFiles();
 	}
 	
 	public static final String[] WEBINFO_INCLUDE_DIRS = {"control","ini","src","tool","busitune","busitune4rft"};
@@ -37,6 +38,20 @@ public class CompareFile {
 		dirT = new File(TARGET_PREFIX+"wms");
 		result = new File(RESULT_DIR+"WMS_diff.txt");
 		printDiffFile(dirS,dirT,WMS_INCLUDE_DIRS,result);
+	}
+	
+	public static void cpFiles()throws IOException{
+		File dirS = new File("E:/项目");
+		File dirT = new File("C:/文档/大福/项目");	
+		CompareFileUtil cf = CompareFileUtil.copyFiles(dirS, dirT, false);
+		System.out.println("-----------------------change file--------------------");
+		for(String name : cf.diffFiles.keySet()){
+			System.out.println(name);
+		}
+		System.out.println("-----------------------added file--------------------");
+		for(String name : cf.addedFiles.keySet()){
+			System.out.println(name);
+		}
 	}
 	
 	/**
