@@ -1,5 +1,7 @@
 package util;
 
+import java.math.BigInteger;
+
 public class BytesUtil {
 	
 	public static byte[] numToByte(Number num){
@@ -108,6 +110,23 @@ public class BytesUtil {
         s1 <<= 8; 
         s = (short) (s0 | s1); 
         return s; 
+    }
+    
+    /**
+     * 将byte[]转化为以string形式表示的进制数
+     * @param radix：2：二进制的string表示   16：16进制的string表示
+     * */
+    public static String byteToBit(byte[] bytes, int radix){  
+        return new BigInteger(1, bytes).toString(radix);// 这里的1代表正数  
+    }
+    
+    /**
+     * 将byte[]解析为string形式的二进制
+     * 功能类似Integer.toBinaryString(int)
+     * 如果对于一个byte流，每个byte想解析成二进制，可以使用该方法，java默认每个byte以十进制表示
+     * */
+    public static String byteToBit(byte[] bytes){  
+        return byteToBit(bytes, 2);
     }
 
 }
