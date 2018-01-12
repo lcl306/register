@@ -124,6 +124,7 @@ public class BytesUtil {
      * 将byte[]解析为string形式的二进制
      * 功能类似Integer.toBinaryString(int)
      * 如果对于一个byte流，每个byte想解析成二进制，可以使用该方法，java默认每个byte以十进制表示
+     * 如果接口文档使用二进制进行表述，一般转换成二进制是从低位向高位看的，eg：文档表述第一位是1，第二位是0，二进制表示为01
      * */
     public static String byteToBit(byte[] bytes){  
         return byteToBit(bytes, 2);
