@@ -1,12 +1,34 @@
 package excel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
 
 public class ExcelUtil {
+	
+	final static String[] CHAR_COLS_ORI = { "A", "B", "C", "D", "E", "F", "G", "H",
+		"I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
+		"V", "W", "X", "Y", "Z"};
+	
+	static String[] CHAR_COLS={};
+	
+	static{
+		List<String> charList = new ArrayList<>();
+		for(int i=0; i<CHAR_COLS_ORI.length; i++){
+			charList.add(CHAR_COLS_ORI[i]);
+		}
+		for(int i=0; i<CHAR_COLS_ORI.length; i++){
+			for(int j=0; j<CHAR_COLS_ORI.length; j++){
+				charList.add(CHAR_COLS_ORI[i]+CHAR_COLS_ORI[j]);
+			}
+			CHAR_COLS = charList.toArray(new String[]{});
+		}
+	}
 
-	final static String[] CHAR_COLS = { "A", "B", "C", "D", "E", "F", "G", "H",
+	/*final static String[] CHAR_COLS = { "A", "B", "C", "D", "E", "F", "G", "H",
 			"I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
 			"V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG",
 			"AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR",
@@ -34,7 +56,7 @@ public class ExcelUtil {
 			"JP", "JQ", "JR", "JS", "JT", "JU", "JV", "JW", "JX", "JY", "JZ",
 			"KA", "KB", "KC", "KD", "KE", "KF", "KG", "KH", "KI", "KJ", "KK",
 			"KL", "KM", "KN", "KO", "KP", "KQ", "KR", "KS", "KT", "KU", "KV",
-			"KW", "KX", "KY", "KZ" };
+			"KW", "KX", "KY", "KZ" };*/
 
 	public static boolean hasMerged(int row, int col, Sheet sheet) {
 		/*int num = sheet.getNumMergedRegions();
