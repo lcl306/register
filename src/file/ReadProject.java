@@ -16,19 +16,22 @@ import excel.ExcelReader;
 import excel.ExcelUtil;
 import excel.ExcelWriter;
 
+/**
+ * 填写年月，每月第一天
+ * */
 public class ReadProject {
 	
-	private String readFileName = "C:/文档/大福/科尔沁/科尔沁_开发工程表.xlsx";
+	private String readFileName = "C:/文档/大福/项目/武汉长江存储/工时计划/武汉长江存储_开发工程表_1.0.xlsx";
 	
-	private String writeFileName = "C:/文档/大福/科尔沁/科尔沁_开发工程表write.xlsx";
+	private String writeFileName = "C:/文档/大福/项目/武汉长江存储/工时计划/武汉长江存储_开发工程表_1.0_write.xlsx";
 	
 	private String sheetName = "工程";
 	
-	private String startCellName = "P6";
+	private String startCellName = "S6";
 	
-	private String endCellName = "HU6";
+	private String endCellName = "OJ6";
 	
-	private int endRow = 45;
+	private int endRow = 59;
 	
 	
 	/////////////////////////////////////////////////////////////////////////////////////
