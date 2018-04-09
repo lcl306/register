@@ -3,17 +3,7 @@ package systeminfo.sigar;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import org.hyperic.sigar.CpuInfo;
-import org.hyperic.sigar.CpuPerc;
-import org.hyperic.sigar.FileSystem;
-import org.hyperic.sigar.FileSystemUsage;
-import org.hyperic.sigar.NetFlags;
-import org.hyperic.sigar.NetInterfaceConfig;
-import org.hyperic.sigar.NetInterfaceStat;
-import org.hyperic.sigar.OperatingSystem;
-import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
-import org.hyperic.sigar.Who;
 
 public class SystemBoTest {
 	
@@ -35,18 +25,37 @@ public class SystemBoTest {
             // 内存信息 
             memory(); 
             System.out.println("----------------------------------"); 
-            // 操作系统信息 
-            /*os(); 
-            System.out.println("----------------------------------"); */
-            // 用户信息 
-            /*who(); 
-            System.out.println("----------------------------------");*/ 
             // 文件系统信息 
-            file(); 
+            List<DiskDto> disks1=file(); 
             System.out.println("----------------------------------"); 
             // 网络信息 
-            net(); 
+            List<NetDto> nets1=net(); 
             System.out.println("----------------------------------"); 
+            Thread.sleep(1000);
+            // 文件系统信息 
+            List<DiskDto> disks2=file(); 
+            System.out.println("----------------------------------"); 
+            // 网络信息 
+            List<NetDto>nets2=net(); 
+            System.out.println("----------------------------------"); 
+            for(int i=0; i<disks1.size(); i++){
+            	DiskDto disk1 = disks1.get(i);
+            	DiskDto disk2 = disks2.get(i);
+            	System.out.println(disk1.getDevName() + "已读入:    " + (disk2.getDiskReads()-disk1.getDiskReads()) + "KB"); 
+                System.out.println(disk1.getDevName() + "已写入:    " + (disk2.getDiskWrites()-disk1.getDiskWrites()) + "KB"); 
+            }
+            for(int i=0; i<nets1.size(); i++){
+            	NetDto net1 = nets1.get(i);
+            	NetDto net2 = nets2.get(i);
+            	System.out.println(net1.getName() + "接收的总包裹数:" + (net2.getRxPackets()-net1.getRxPackets()));// 接收的总包裹数 
+                System.out.println(net1.getName() + "发送的总包裹数:" + (net2.getTxPackets()-net1.getTxPackets()));// 发送的总包裹数 
+                System.out.println(net1.getName() + "接收到的总字节数:" + (net2.getRxBytes()-net1.getRxBytes())/1024+"KB");// 接收到的总字节数 
+                System.out.println(net1.getName() + "发送的总字节数:" + (net2.getTxBytes()-net1.getTxBytes())/1024+"KB");// 发送的总字节数 
+                System.out.println(net1.getName() + "接收到的错误包数:" + (net2.getRxErrors()-net1.getRxErrors()));// 接收到的错误包数 
+                System.out.println(net1.getName() + "发送数据包时的错误数:" + (net2.getTxErrors()-net1.getTxErrors()));// 发送数据包时的错误数 
+                System.out.println(net1.getName() + "接收时丢弃的包数:" + (net2.getRxDropped()-net1.getRxDropped()));// 接收时丢弃的包数 
+                System.out.println(net1.getName() + "发送时丢弃的包数:" + (net2.getTxDropped()-net1.getTxDropped()));// 发送时丢弃的包数 
+            }
         } catch (Exception e1) { 
             e1.printStackTrace(); 
         } 
@@ -93,133 +102,25 @@ public class SystemBoTest {
     	}
     } 
 
-    private static void file() throws Exception { 
-        Sigar sigar = new Sigar(); 
-        FileSystem fslist[] = sigar.getFileSystemList(); 
-        for (int i = 0; i < fslist.length; i++) { 
-            System.out.println("分区的盘符名称" + i); 
-            FileSystem fs = fslist[i]; 
-            // 分区的盘符名称 
-            //System.out.println("盘符名称:    " + fs.getDevName()); 
-            // 分区的盘符名称 
-            //System.out.println("盘符路径:    " + fs.getDirName()); 
-            //System.out.println("盘符标志:    " + fs.getFlags());// 
-            // 文件系统类型，比如 FAT32、NTFS 
-            //System.out.println("盘符类型:    " + fs.getSysTypeName()); 
-            // 文件系统类型名，比如本地硬盘、光驱、网络文件系统等 
-            //System.out.println("盘符类型名:    " + fs.getTypeName()); 
-            // 文件系统类型 
-            //System.out.println("盘符文件系统类型:    " + fs.getType()); 
-            FileSystemUsage usage = null; 
-            usage = sigar.getFileSystemUsage(fs.getDirName()); 
-            switch (fs.getType()) { 
-            case 0: // TYPE_UNKNOWN ：未知 
-                break; 
-            case 1: // TYPE_NONE 
-                break; 
-            case 2: // TYPE_LOCAL_DISK : 本地硬盘 
-                // 文件系统总大小 
-                System.out.println(fs.getDevName() + "总大小:    " + usage.getTotal()/M + "GB"); 
-                // 文件系统剩余大小 
-                //System.out.println(fs.getDevName() + "剩余大小:    " + usage.getFree()/MB + "GB"); 
-                // 文件系统可用大小 
-                System.out.println(fs.getDevName() + "可用大小:    " + usage.getAvail()/M + "GB"); 
-                // 文件系统已经使用量 
-                System.out.println(fs.getDevName() + "已经使用量:    " + usage.getUsed()/M + "GB"); 
-                double usePercent = usage.getUsePercent() * PERCENT; 
-                // 文件系统资源的利用率 
-                System.out.println(fs.getDevName() + "资源的利用率:    " + usePercent + "%"); 
-                break; 
-            case 3:// TYPE_NETWORK ：网络 
-                break; 
-            case 4:// TYPE_RAM_DISK ：闪存 
-                break; 
-            case 5:// TYPE_CDROM ：光驱 
-                break; 
-            case 6:// TYPE_SWAP ：页面交换 
-                break; 
-            } 
-            long reads = usage.getDiskReads();
-            long writes = usage.getDiskWrites();
-            Thread.sleep(SLEEP_TIME);
-            System.out.println(fs.getDevName() + "读出：    " + (usage.getDiskReads()-reads)+"KB"); 
-            System.out.println(fs.getDevName() + "写入：    " + (usage.getDiskWrites()-writes)+"KB"); 
-        } 
-        return; 
+    private static List<DiskDto> file() throws Exception { 
+    	List<DiskDto> ddtos = SystemBo.disk();
+    	for(DiskDto disk : ddtos){
+    		System.out.println(disk.getDevName() + "总大小:    " + disk.getTotal() + "GB"); 
+            System.out.println(disk.getDevName() + "可用大小:    " + disk.getAvail() + "GB"); 
+            System.out.println(disk.getDevName() + "已经使用量:    " + disk.getUsed() + "GB"); 
+            System.out.println(disk.getDevName() + "资源的利用率:    " + disk.getUsePercent() + "%"); 
+    	}
+    	return ddtos;
     } 
 
-    private static void net() throws Exception { 
-        Sigar sigar = new Sigar(); 
-        String ifNames[] = sigar.getNetInterfaceList(); 
-        for (int i = 0; i < ifNames.length; i++) { 
-        	String name = ifNames[i];
-        	NetInterfaceConfig ifconfig = sigar.getNetInterfaceConfig(name); 
-        	if(!ifconfig.getAddress().equals("0.0.0.0") && !ifconfig.getAddress().equals("127.0.0.1")){
-        		if ((ifconfig.getFlags() & 1L) <= 0L) { 
-                    System.out.println("!IFF_UP...skipping getNetInterfaceStat"); 
-                    continue; 
-                } 
-                if (NetFlags.LOOPBACK_ADDRESS.equals(ifconfig.getAddress()) || (ifconfig.getFlags() & NetFlags.IFF_LOOPBACK) != 0 
-                        || NetFlags.NULL_HWADDR.equals(ifconfig.getHwaddr())) { 
-                    continue; 
-                } 
-        		//System.out.println("网络设备名:    " + name);// 网络设备名 
-                System.out.println("IP地址:    " + ifconfig.getAddress());// IP地址 
-                //System.out.println("子网掩码:    " + ifconfig.getNetmask());// 子网掩码
-                //System.out.println(ifconfig.getName() + "网关广播地址:" + ifconfig.getBroadcast());// 网关广播地址 
-                System.out.println(ifconfig.getName() + "网卡MAC地址:" + ifconfig.getHwaddr());// 网卡MAC地址  
-                System.out.println(ifconfig.getName() + "网卡描述信息:" + ifconfig.getDescription());// 网卡描述信息 
-                //System.out.println(ifconfig.getName() + "网卡类型" + ifconfig.getType());// 
-                
-                NetInterfaceStat ifstat = sigar.getNetInterfaceStat(name); 
-                System.out.println(name + "接收的总包裹数:" + ifstat.getRxPackets()/M+"M");// 接收的总包裹数 
-                System.out.println(name + "发送的总包裹数:" + ifstat.getTxPackets()/M+"M");// 发送的总包裹数 
-                System.out.println(name + "接收到的总字节数:" + ifstat.getRxBytes()/M+"MB");// 接收到的总字节数 
-                System.out.println(name + "发送的总字节数:" + ifstat.getTxBytes()/M+"MB");// 发送的总字节数 
-                System.out.println(name + "接收到的错误包数:" + ifstat.getRxErrors()/M+"M");// 接收到的错误包数 
-                System.out.println(name + "发送数据包时的错误数:" + ifstat.getTxErrors()/M+"M");// 发送数据包时的错误数 
-                System.out.println(name + "接收时丢弃的包数:" + ifstat.getRxDropped()/M+"M");// 接收时丢弃的包数 
-                System.out.println(name + "发送时丢弃的包数:" + ifstat.getTxDropped()/M+"M");// 发送时丢弃的包数 
-        	}
-        } 
+    private static List<NetDto> net() throws Exception { 
+    	List<NetDto> ndtos = SystemBo.net();
+    	for(NetDto net : ndtos){
+    		System.out.println(net.getName() + "IP地址:    " + net.getIp());// IP地址 
+    		System.out.println(net.getName() + "网卡MAC地址:" + net.getMac());// 网卡MAC地址  
+            System.out.println(net.getName() + "网卡描述信息:" + net.getDescription());// 网卡描述信息 
+    	}
+    	return ndtos;
     }
-    
-    private static void os() { 
-        OperatingSystem OS = OperatingSystem.getInstance(); 
-        // 操作系统内核类型如： 386、486、586等x86 
-        System.out.println("操作系统:    " + OS.getArch()); 
-        System.out.println("操作系统CpuEndian():    " + OS.getCpuEndian());// 
-        System.out.println("操作系统DataModel():    " + OS.getDataModel());// 
-        // 系统描述 
-        System.out.println("操作系统的描述:    " + OS.getDescription()); 
-        // 操作系统类型 
-        // System.out.println("OS.getName():    " + OS.getName()); 
-        // System.out.println("OS.getPatchLevel():    " + OS.getPatchLevel());// 
-        // 操作系统的卖主 
-        System.out.println("操作系统的卖主:    " + OS.getVendor()); 
-        // 卖主名称 
-        System.out.println("操作系统的卖主名:    " + OS.getVendorCodeName()); 
-        // 操作系统名称 
-        System.out.println("操作系统名称:    " + OS.getVendorName()); 
-        // 操作系统卖主类型 
-        System.out.println("操作系统卖主类型:    " + OS.getVendorVersion()); 
-        // 操作系统的版本号 
-        System.out.println("操作系统的版本号:    " + OS.getVersion()); 
-    } 
-
-    private static void who() throws SigarException { 
-        Sigar sigar = new Sigar(); 
-        Who who[] = sigar.getWhoList(); 
-        if (who != null && who.length > 0) { 
-            for (int i = 0; i < who.length; i++) { 
-                // System.out.println("当前系统进程表中的用户名" + String.valueOf(i)); 
-                Who _who = who[i]; 
-                System.out.println("用户控制台:    " + _who.getDevice()); 
-                System.out.println("用户host:    " + _who.getHost()); 
-                // System.out.println("getTime():    " + _who.getTime()); 
-                // 当前系统进程表中的用户名 
-                System.out.println("当前系统进程表中的用户名:    " + _who.getUser()); 
-            } 
-        } 
-    } 
+     
 }

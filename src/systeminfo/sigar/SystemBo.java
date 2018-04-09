@@ -9,10 +9,17 @@ import java.util.Properties;
 
 import org.hyperic.sigar.CpuInfo;
 import org.hyperic.sigar.CpuPerc;
+import org.hyperic.sigar.FileSystem;
+import org.hyperic.sigar.FileSystemUsage;
 import org.hyperic.sigar.Mem;
+import org.hyperic.sigar.NetFlags;
+import org.hyperic.sigar.NetInterfaceConfig;
+import org.hyperic.sigar.NetInterfaceStat;
+import org.hyperic.sigar.OperatingSystem;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
 import org.hyperic.sigar.Swap;
+import org.hyperic.sigar.Who;
 
 public class SystemBo {
 	
@@ -115,6 +122,139 @@ public class SystemBo {
             cdtos.add(cdto);
         } 
         return cdtos;
+    } 
+	
+	public static List<DiskDto> disk() throws Exception { 
+		List<DiskDto> diskDtos = new ArrayList<DiskDto>();
+        Sigar sigar = new Sigar(); 
+        FileSystem fslist[] = sigar.getFileSystemList(); 
+        for (int i = 0; i < fslist.length; i++) { 
+            FileSystem fs = fslist[i]; 
+            // 分区的盘符名称 
+            //System.out.println("盘符名称:    " + fs.getDevName()); 
+            // 分区的盘符名称 
+            //System.out.println("盘符路径:    " + fs.getDirName()); 
+            //System.out.println("盘符标志:    " + fs.getFlags());// 
+            // 文件系统类型，比如 FAT32、NTFS 
+            //System.out.println("盘符类型:    " + fs.getSysTypeName()); 
+            // 文件系统类型名，比如本地硬盘、光驱、网络文件系统等 
+            //System.out.println("盘符类型名:    " + fs.getTypeName()); 
+            // 文件系统类型 
+            //System.out.println("盘符文件系统类型:    " + fs.getType()); 
+            FileSystemUsage usage = null; 
+            try{
+            	usage = sigar.getFileSystemUsage(fs.getDirName()); 
+            }catch (SigarException e){
+            	//System.out.println("读到光驱了");
+            }
+            switch (fs.getType()) { 
+            case 0: // TYPE_UNKNOWN ：未知 
+                break; 
+            case 1: // TYPE_NONE 
+                break; 
+            case 2: // TYPE_LOCAL_DISK : 本地硬盘 
+            	DiskDto ddto = new DiskDto();
+            	ddto.setDevName(fs.getDevName());
+            	ddto.setTotal(usage.getTotal()/M);
+            	ddto.setUsed(usage.getUsed()/M);
+            	ddto.setAvail(usage.getAvail()/M);
+            	ddto.setUsePercent(usage.getUsePercent() * PERCENT);
+            	ddto.setDiskReads(usage.getDiskReads());
+            	ddto.setDiskWrites(usage.getDiskWrites());
+                // 文件系统剩余大小 
+                //System.out.println(fs.getDevName() + "剩余大小:    " + usage.getFree()/MB + "GB"); 
+            	diskDtos.add(ddto);
+                break; 
+            case 3:// TYPE_NETWORK ：网络 
+                break; 
+            case 4:// TYPE_RAM_DISK ：闪存 
+                break; 
+            case 5:// TYPE_CDROM ：光驱 
+                break; 
+            case 6:// TYPE_SWAP ：页面交换 
+                break; 
+            } 
+        } 
+        return diskDtos; 
+    } 
+	
+	public static List<NetDto> net() throws Exception { 
+		List<NetDto> netDtos = new ArrayList<NetDto>();
+        Sigar sigar = new Sigar(); 
+        String ifNames[] = sigar.getNetInterfaceList(); 
+        for (int i = 0; i < ifNames.length; i++) { 
+        	String name = ifNames[i];
+        	NetInterfaceConfig ifconfig = sigar.getNetInterfaceConfig(name); 
+        	if(!ifconfig.getAddress().equals("0.0.0.0") && !ifconfig.getAddress().equals("127.0.0.1")){
+        		if ((ifconfig.getFlags() & 1L) <= 0L) { 
+                    System.out.println("!IFF_UP...skipping getNetInterfaceStat"); 
+                    continue; 
+                } 
+                if (NetFlags.LOOPBACK_ADDRESS.equals(ifconfig.getAddress()) || (ifconfig.getFlags() & NetFlags.IFF_LOOPBACK) != 0 
+                        || NetFlags.NULL_HWADDR.equals(ifconfig.getHwaddr())) { 
+                    continue; 
+                }           
+                //System.out.println(ifconfig.getName() + "网关广播地址:" + ifconfig.getBroadcast());// 网关广播地址
+                //System.out.println(ifconfig.getName() + "网卡类型" + ifconfig.getType());// 
+                NetDto ndto = new NetDto();
+                ndto.setName(name);
+                ndto.setIp(ifconfig.getAddress());
+                ndto.setMask(ifconfig.getNetmask());
+                ndto.setMac(ifconfig.getHwaddr());
+                ndto.setDescription(ifconfig.getDescription());
+               
+                NetInterfaceStat ifstat = sigar.getNetInterfaceStat(name);
+                ndto.setRxPackets(ifstat.getRxPackets());
+                ndto.setTxPackets(ifstat.getTxPackets());
+                ndto.setRxBytes(ifstat.getRxBytes());
+                ndto.setTxBytes(ifstat.getTxBytes());
+                ndto.setRxErrors(ifstat.getRxErrors());
+                ndto.setTxErrors(ifstat.getTxErrors());
+                ndto.setRxDropped(ifstat.getRxDropped());
+                ndto.setTxDropped(ifstat.getTxDropped());
+                netDtos.add(ndto);
+        	}
+        } 
+        return netDtos;
+    }
+    
+    public static void os() { 
+        OperatingSystem OS = OperatingSystem.getInstance(); 
+        // 操作系统内核类型如： 386、486、586等x86 
+        System.out.println("操作系统:    " + OS.getArch()); 
+        System.out.println("操作系统CpuEndian():    " + OS.getCpuEndian());// 
+        System.out.println("操作系统DataModel():    " + OS.getDataModel());// 
+        // 系统描述 
+        System.out.println("操作系统的描述:    " + OS.getDescription()); 
+        // 操作系统类型 
+        // System.out.println("OS.getName():    " + OS.getName()); 
+        // System.out.println("OS.getPatchLevel():    " + OS.getPatchLevel());// 
+        // 操作系统的卖主 
+        System.out.println("操作系统的卖主:    " + OS.getVendor()); 
+        // 卖主名称 
+        System.out.println("操作系统的卖主名:    " + OS.getVendorCodeName()); 
+        // 操作系统名称 
+        System.out.println("操作系统名称:    " + OS.getVendorName()); 
+        // 操作系统卖主类型 
+        System.out.println("操作系统卖主类型:    " + OS.getVendorVersion()); 
+        // 操作系统的版本号 
+        System.out.println("操作系统的版本号:    " + OS.getVersion()); 
+    } 
+
+    public static void who() throws SigarException { 
+        Sigar sigar = new Sigar(); 
+        Who who[] = sigar.getWhoList(); 
+        if (who != null && who.length > 0) { 
+            for (int i = 0; i < who.length; i++) { 
+                // System.out.println("当前系统进程表中的用户名" + String.valueOf(i)); 
+                Who _who = who[i]; 
+                System.out.println("用户控制台:    " + _who.getDevice()); 
+                System.out.println("用户host:    " + _who.getHost()); 
+                // System.out.println("getTime():    " + _who.getTime()); 
+                // 当前系统进程表中的用户名 
+                System.out.println("当前系统进程表中的用户名:    " + _who.getUser()); 
+            } 
+        } 
     } 
 
 }
