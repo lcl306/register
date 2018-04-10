@@ -1,9 +1,6 @@
 package systeminfo.sigar;
 
-import java.net.UnknownHostException;
 import java.util.List;
-
-import org.hyperic.sigar.SigarException;
 
 public class SystemBoTest {
 	
@@ -16,54 +13,16 @@ public class SystemBoTest {
 	
 	public static void main(String[] args) { 
         try { 
-            // System信息，从jvm获取 
-            property(); 
-            System.out.println("----------------------------------"); 
-            // cpu信息 
-            cpu(); 
-            System.out.println("----------------------------------"); 
-            // 内存信息 
-            memory(); 
-            System.out.println("----------------------------------"); 
-            // 文件系统信息 
-            List<DiskDto> disks1=file(); 
-            System.out.println("----------------------------------"); 
-            // 网络信息 
-            List<NetDto> nets1=net(); 
-            System.out.println("----------------------------------"); 
-            Thread.sleep(1000);
-            // 文件系统信息 
-            List<DiskDto> disks2=file(); 
-            System.out.println("----------------------------------"); 
-            // 网络信息 
-            List<NetDto>nets2=net(); 
-            System.out.println("----------------------------------"); 
-            for(int i=0; i<disks1.size(); i++){
-            	DiskDto disk1 = disks1.get(i);
-            	DiskDto disk2 = disks2.get(i);
-            	System.out.println(disk1.getDevName() + "已读入:    " + (disk2.getDiskReads()-disk1.getDiskReads()) + "KB"); 
-                System.out.println(disk1.getDevName() + "已写入:    " + (disk2.getDiskWrites()-disk1.getDiskWrites()) + "KB"); 
-            }
-            for(int i=0; i<nets1.size(); i++){
-            	NetDto net1 = nets1.get(i);
-            	NetDto net2 = nets2.get(i);
-            	System.out.println(net1.getName() + "接收的总包裹数:" + (net2.getRxPackets()-net1.getRxPackets()));// 接收的总包裹数 
-                System.out.println(net1.getName() + "发送的总包裹数:" + (net2.getTxPackets()-net1.getTxPackets()));// 发送的总包裹数 
-                System.out.println(net1.getName() + "接收到的总字节数:" + (net2.getRxBytes()-net1.getRxBytes())/1024+"KB");// 接收到的总字节数 
-                System.out.println(net1.getName() + "发送的总字节数:" + (net2.getTxBytes()-net1.getTxBytes())/1024+"KB");// 发送的总字节数 
-                System.out.println(net1.getName() + "接收到的错误包数:" + (net2.getRxErrors()-net1.getRxErrors()));// 接收到的错误包数 
-                System.out.println(net1.getName() + "发送数据包时的错误数:" + (net2.getTxErrors()-net1.getTxErrors()));// 发送数据包时的错误数 
-                System.out.println(net1.getName() + "接收时丢弃的包数:" + (net2.getRxDropped()-net1.getRxDropped()));// 接收时丢弃的包数 
-                System.out.println(net1.getName() + "发送时丢弃的包数:" + (net2.getTxDropped()-net1.getTxDropped()));// 发送时丢弃的包数 
-            }
+            system();
         } catch (Exception e1) { 
             e1.printStackTrace(); 
         } 
     } 
-
-    private static void property() throws UnknownHostException { 
-        BaseSystemDto bdto = SystemBo.property();
-        System.out.println("计算机名:    " + bdto.getComputerName()); 
+	
+	private static void system() throws Exception{
+		SystemDto system = SystemBo.system();
+		BaseSystemDto bdto = system.getBaseSystemDto();
+		System.out.println("计算机名:    " + bdto.getComputerName()); 
         System.out.println("计算机域名:    " + bdto.getUserDomain()); 
         System.out.println("本地ip地址:    " + bdto.getIp()); 
         System.out.println("本地主机名:    " + bdto.getHostname()); 
@@ -73,10 +32,8 @@ public class SystemBoTest {
         System.out.println("JVM内存使用率:    " + bdto.getJavaMemusedPercent()+"%"); 
         System.out.println("JVM可以使用的处理器个数:    " + bdto.getJavaProcessorNum()); 
         System.out.println("Java的运行环境版本：    " + bdto.getJavaVersion()); 
-    } 
-
-    private static void memory() throws SigarException { 
-        MemoryDto mdto = SystemBo.memory();
+        System.out.println("----------------------------------"); 
+        MemoryDto mdto = system.getMemoryDto();
         System.out.println("内存总量:    " + mdto.getMemTotal() + "MB"); 
         System.out.println("当前内存使用量:    " + mdto.getMemUsed() + "MB"); 
         System.out.println("当前内存剩余量:    " + mdto.getMemFree() + "MB"); 
@@ -85,10 +42,8 @@ public class SystemBoTest {
         System.out.println("虚拟内存使用量:    " + mdto.getSwapUsed()+ "MB"); 
         System.out.println("虚拟内存剩余量:    " + mdto.getSwapFree() + "MB"); 
         System.out.println("虚拟内存使用率:    " + mdto.getSwapUsePercent()  + "%");
-    } 
-
-    private static void cpu() throws SigarException { 
-    	List<CpuDto> cpus = SystemBo.cpu();
+        System.out.println("----------------------------------"); 
+        List<CpuDto> cpus = system.getCpuDtos();
     	int i =0;
     	for(CpuDto cpu : cpus){
     		System.out.println("第" + (i + 1) + "块CPU信息"); 
@@ -100,27 +55,31 @@ public class SystemBoTest {
             System.out.println("CPU当前空闲率:    " + cpu.getIdle());// 当前空闲率 
             System.out.println("CPU总的使用率:    " + cpu.getCombined());// 总的使用率
     	}
-    } 
-
-    private static List<DiskDto> file() throws Exception { 
-    	List<DiskDto> ddtos = SystemBo.disk();
-    	for(DiskDto disk : ddtos){
+    	System.out.println("----------------------------------"); 
+		List<DiskDto> disks = system.getDiskDtos();
+		for(DiskDto disk : disks){
     		System.out.println(disk.getDevName() + "总大小:    " + disk.getTotal() + "GB"); 
             System.out.println(disk.getDevName() + "可用大小:    " + disk.getAvail() + "GB"); 
             System.out.println(disk.getDevName() + "已经使用量:    " + disk.getUsed() + "GB"); 
             System.out.println(disk.getDevName() + "资源的利用率:    " + disk.getUsePercent() + "%"); 
+            System.out.println(disk.getDevName() + "已读入:    " + disk.getDiskReads() + "KB"); 
+            System.out.println(disk.getDevName() + "已写入:    " + disk.getDiskWrites() + "KB");
     	}
-    	return ddtos;
-    } 
-
-    private static List<NetDto> net() throws Exception { 
-    	List<NetDto> ndtos = SystemBo.net();
-    	for(NetDto net : ndtos){
+		System.out.println("----------------------------------"); 
+		List<NetDto> nets = system.getNetDtos();
+    	for(NetDto net : nets){
     		System.out.println(net.getName() + "IP地址:    " + net.getIp());// IP地址 
     		System.out.println(net.getName() + "网卡MAC地址:" + net.getMac());// 网卡MAC地址  
             System.out.println(net.getName() + "网卡描述信息:" + net.getDescription());// 网卡描述信息 
+            System.out.println(net.getName() + "接收的总包裹数:" + net.getRxPackets());// 接收的总包裹数 
+            System.out.println(net.getName() + "发送的总包裹数:" + net.getTxPackets());// 发送的总包裹数 
+            System.out.println(net.getName() + "接收到的总字节数:" + net.getRxBytes()/SystemBo.K+"KB");// 接收到的总字节数 
+            System.out.println(net.getName() + "发送的总字节数:" + net.getTxBytes()/SystemBo.K+"KB");// 发送的总字节数 
+            System.out.println(net.getName() + "接收到的错误包数:" + net.getRxErrors());// 接收到的错误包数 
+            System.out.println(net.getName() + "发送数据包时的错误数:" + net.getTxErrors());// 发送数据包时的错误数 
+            System.out.println(net.getName() + "接收时丢弃的包数:" + net.getRxDropped());// 接收时丢弃的包数 
+            System.out.println(net.getName() + "发送时丢弃的包数:" + net.getTxDropped());// 发送时丢弃的包数 
     	}
-    	return ndtos;
-    }
+	}
      
 }
