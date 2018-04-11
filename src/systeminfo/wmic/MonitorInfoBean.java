@@ -1,6 +1,8 @@
 package systeminfo.wmic;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MonitorInfoBean implements Serializable{
 	
@@ -32,6 +34,8 @@ public class MonitorInfoBean implements Serializable{
        
     /** *//** cpu使用率. */  
     private double cpuRatio;   
+    
+    private List<ProcessInfo> processInfos = new ArrayList<ProcessInfo>();
   
     public long getFreeMemory() {   
         return freeMemory;   
@@ -103,6 +107,14 @@ public class MonitorInfoBean implements Serializable{
   
     public void setCpuRatio(double cpuRatio) {   
         this.cpuRatio = cpuRatio;   
-    }   
+    }
+
+	public List<ProcessInfo> getProcessInfos() {
+		return processInfos;
+	}
+
+	public void setProcessInfos(List<ProcessInfo> processInfos) {
+		this.processInfos = processInfos;
+	}   
 
 }
