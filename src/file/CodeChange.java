@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 
 public class CodeChange {
 	
@@ -20,24 +21,49 @@ public class CodeChange {
 	
 	////////////////////////////////////////////////////////////////////////
 	
-	public static String SRC_CODE = CN_CODE;
+	public static String SRC_CODE = JAN_CODE;
 	
-	public static String TAG_CODE = STD_CODE;
+	public static String TAG_CODE = CN_CODE;
 	
 	public static final String[] EXCLUDE_FILES = {};
 	
 	
 	public static void main(String[] args)throws Exception{
-		/*change(new File("C:/daifuku/wms/sqlscript/oracle/3.initdata/INIT_DCBase.sql"),
-				new File("C:/daifuku/wms/sqlscript/oracle/3.initdata/UTF8_INIT_DCBase.sql"));*/
-		changeDir("C:/daifuku/wms/sqlscript/oracle/2.table/1.table/wms",
-				"C:/daifuku/wms/sqlscript/oracle/2.table/1.table/wmsTmp", ALL_FILE);
+		//change(new File("C:/TEMP/Module2.bas"), JAN_CODE, new File("C:/TEMP/Module22.bas"), CN_CODE);
+		/*changeDir("C:/文档/大福/_说明文档/WMS3.5/daifuku/wms/src/sqlscript",
+				"C:/文档/大福/_说明文档/WMS3.5/daifuku/wms/src/sqlscript1", ALL_FILE);*/
 		/*changeDir("C:/daifuku/wms/sqlscript/oracle/2.table",
 				"C:/daifuku/wms/sqlscript/oracle/2.tableTemp", ALL_FILE);*/
+		changeDirName(new File("C:/TEMP/WareNavi7_Documents_Ver.1.6.2"),CN_CODE,JAN_CODE);
 	}
 	
 	public static void changeDir(String sourceDir, String targetDir, final String fileType)throws Exception{
 		changeDir(new File(sourceDir), new File(targetDir), fileType, SRC_CODE, TAG_CODE);
+	}
+	
+	public static void changeDirName(File sourceDir, String sourceCode, String targetCode){
+		if(sourceDir.isDirectory() && sourceDir.exists()){
+			File[] files = sourceDir.listFiles();
+			for(File f : files){
+				if(f.isDirectory() && f.exists()){
+					changeDirName(f, sourceCode, targetCode);
+				}else{
+					changeFileName(f, sourceCode, targetCode);
+				}
+			}
+		}
+		changeFileName(sourceDir, sourceCode, targetCode);  //必须最后改自己
+	}
+	
+	protected static boolean changeFileName(File sourceDir, String sourceCode, String targetCode){
+		boolean rtn = false;
+		try {
+			String dirName = new String(sourceDir.getName().getBytes(sourceCode), targetCode);
+			rtn = sourceDir.renameTo(new File(sourceDir.getParentFile().getPath()+File.separator+dirName));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		return rtn;
 	}
 	
 	public static void changeDir(File sourceDir, File targetDir, final String fileType, 
