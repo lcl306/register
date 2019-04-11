@@ -3,6 +3,9 @@ package systeminfo.wmic;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.lang.management.ManagementFactory;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.sun.management.OperatingSystemMXBean;
 
@@ -24,7 +27,8 @@ public class MonitorServiceImpl implements IMonitorService {
      * @author amg     * Creation date: 2008-4-25 - 上午10:45:08  
      */  
     @Override
-    public MonitorInfoBean getMonitorInfoBean() throws Exception {   
+    public MonitorInfoBean getMonitorInfoBean() throws Exception {  
+    	MonitorInfoBean infoBean = new MonitorInfoBean(); 
         int mb = 1024*1024;   
         // java最大可使用内存   
         long javaMaxMemory = Runtime.getRuntime().maxMemory() / mb;
@@ -51,10 +55,8 @@ public class MonitorServiceImpl implements IMonitorService {
   
         double cpuRatio = 0;   
         if (osName.toLowerCase().startsWith("windows")) {   
-            cpuRatio = this.getCpuRatioForWindows();   
-        }   
-        // 构造返回对象   
-        MonitorInfoBean infoBean = new MonitorInfoBean();   
+            cpuRatio = this.getCpuRatioForWindows(infoBean.getProcessInfos());   
+        }     
         infoBean.setFreeMemory(javaUnusedMemory);   
         infoBean.setFreePhysicalMemorySize(freePhysicalMemorySize);   
         infoBean.setMaxMemory(javaMaxMemory);   
@@ -72,18 +74,29 @@ public class MonitorServiceImpl implements IMonitorService {
      * @return 返回cpu使用率  
      * @author amg     * Creation date: 2008-4-25 - 下午06:05:11  
      */  
-    private double getCpuRatioForWindows() {   
+    private double getCpuRatioForWindows(List<ProcessInfo> processInfos) {  
         try {   
             String procCmd = System.getenv("windir")   
                     + "//system32//wbem//wmic.exe process get Caption,CommandLine,"  
-                    + "KernelModeTime,ReadOperationCount,ThreadCount,UserModeTime,WriteOperationCount";   
+                    + "KernelModeTime,ReadOperationCount,ThreadCount,UserModeTime,WriteOperationCount,WorkingSetSize,PeakWorkingSetSize";   
             // 取进程信息   
-            long[] c0 = readCpu(Runtime.getRuntime().exec(procCmd));   
+            Map<String,ProcessInfo> processInfosPre = new HashMap<String, ProcessInfo>();
+            Map<String,ProcessInfo> processInfosCur = new HashMap<String, ProcessInfo>();
+            long[] c0 = readCpu(Runtime.getRuntime().exec(procCmd), processInfosPre);   
             Thread.sleep(CPUTIME);   
-            long[] c1 = readCpu(Runtime.getRuntime().exec(procCmd));   
+            long[] c1 = readCpu(Runtime.getRuntime().exec(procCmd), processInfosCur);   
             if (c0 != null && c1 != null) {   
                 long idletime = c1[0] - c0[0];   
-                long busytime = c1[1] - c0[1];   
+                long busytime = c1[1] - c0[1];
+                for(String key : processInfosCur.keySet()){
+                	ProcessInfo cur = processInfosCur.get(key);
+                	ProcessInfo pre = processInfosPre.get(key);
+                	if(pre!=null){
+                		cur.setCpuRatio((cur.getKernelModeTime()+cur.getUserModeTime()-pre.getKernelModeTime()-pre.getUserModeTime())*PERCENT/(busytime+idletime));
+                		//cur.setWorkingSetSize(cur.getWorkingSetSize()-pre.getWorkingSetSize());
+                		processInfos.add(cur);
+                	}
+                }
                 return Double.valueOf( PERCENT * (busytime) / (busytime + idletime)).doubleValue();   
             } else {   
                 return 0.0;   
@@ -100,7 +113,7 @@ public class MonitorServiceImpl implements IMonitorService {
      * @return  
      * @author amg     * Creation date: 2008-4-25 - 下午06:10:14  
      */  
-    private long[] readCpu(final Process proc) {   
+    private long[] readCpu(final Process proc, Map<String,ProcessInfo> processInfos) {   
         long[] retn = new long[2]; 
         long idletime = 0;   
         long kneltime = 0;   
@@ -119,26 +132,39 @@ public class MonitorServiceImpl implements IMonitorService {
             int rocidx = line.indexOf("ReadOperationCount");   
             int umtidx = line.indexOf("UserModeTime");   
             int kmtidx = line.indexOf("KernelModeTime");   
-            int wocidx = line.indexOf("WriteOperationCount");   
+            int wocidx = line.indexOf("WriteOperationCount"); 
+            int pwsidx = line.indexOf("PeakWorkingSetSize");
+            int wssidx = line.lastIndexOf("WorkingSetSize");
                
             while ((line = input.readLine()) != null) {   
                 if (line.length() < wocidx) {   
                     continue;   
                 }   
-                // 字段出现顺序：Caption,CommandLine,KernelModeTime,ReadOperationCount,ThreadCount,UserModeTime,WriteOperation   
+                // 字段出现顺序：Caption,CommandLine,KernelModeTime,PeakWorkingSetSize,ReadOperationCount,ThreadCount,UserModeTime,WorkingSetSize,WriteOperationCount 
                 caption = Bytes.substring(line, capidx, cmdidx - 1).trim();   
                 String cmd = Bytes.substring(line, cmdidx, kmtidx - 1).trim();   
                 if (cmd.indexOf("wmic.exe") >= 0) {   
                     continue;   
-                }   
-                // log.info("line="+line);   
+                }     
                 if (caption.equals("System Idle Process") || caption.equals("System")) {   
-                    idletime += Long.valueOf(Bytes.substring(line, kmtidx, rocidx - 1).trim()).longValue();   
-                    idletime += Long.valueOf(Bytes.substring(line, umtidx, wocidx - 1).trim()).longValue();   
-                    continue;   
-                }   
-                kneltime += Long.valueOf(Bytes.substring(line, kmtidx, rocidx - 1).trim()).longValue();   
-                usertime += Long.valueOf(Bytes.substring(line, umtidx, wocidx - 1).trim()).longValue();   
+                    idletime += Long.valueOf(Bytes.substring(line, kmtidx, pwsidx - 1).trim()).longValue();   
+                    idletime += Long.valueOf(Bytes.substring(line, umtidx, wssidx - 1).trim()).longValue();   
+                }else{
+                	long ktime = Long.valueOf(Bytes.substring(line, kmtidx, pwsidx - 1).trim()).longValue();
+                	long utime = Long.valueOf(Bytes.substring(line, umtidx, wssidx - 1).trim()).longValue();
+                	long pMemory = Long.valueOf(Bytes.substring(line, pwsidx, rocidx - 1).trim()).longValue();
+                	long cMemory = Long.valueOf(Bytes.substring(line, wssidx, wocidx - 1).trim()).longValue();
+                	kneltime += ktime;
+                    usertime += utime;
+                    ProcessInfo pi = new ProcessInfo();
+                    pi.setCaption(caption);
+                    pi.setCommandLine(cmd);
+                    pi.setKernelModeTime(ktime);
+                    pi.setUserModeTime(utime);
+                    pi.setPeakWorkingSetSize(pMemory);
+                    pi.setWorkingSetSize(cMemory/1024);
+                    processInfos.put(caption+cmd,pi);
+                }
             }   
             retn[0] = idletime;   
             retn[1] = kneltime + usertime;   
@@ -146,7 +172,6 @@ public class MonitorServiceImpl implements IMonitorService {
         } catch (Exception ex) {   
             ex.printStackTrace();
             System.out.println(caption);
-            
         } finally {   
             try {   
                 proc.getInputStream().close();   
@@ -177,6 +202,13 @@ public class MonitorServiceImpl implements IMonitorService {
         System.out.println("剩余物理内存=" + monitorInfo.getFreeMemory() + "MB");   
         System.out.println("已使用物理内存=" + monitorInfo.getUsedMemory() + "MB");   
         System.out.println("线程总数=" + monitorInfo.getTotalThread() + "KB");   
+        for(ProcessInfo pi : monitorInfo.getProcessInfos()){
+        	System.out.println("进程=" + pi.getCaption());
+        	System.out.println("命令=" +pi.getCommandLine());
+        	System.out.println("cpu占用率="+pi.getCpuRatio()+"%");
+        	System.out.println("最大内存=" + pi.getPeakWorkingSetSize()+"KB");
+        	System.out.println("当前内存=" + pi.getWorkingSetSize()+"KB");
+        }
     }   
 
 }

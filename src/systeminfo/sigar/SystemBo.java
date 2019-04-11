@@ -23,11 +23,48 @@ import org.hyperic.sigar.Who;
 
 public class SystemBo {
 	
-	public static final long M = 1024*1024;
+	public static final long K = 1024;
+	
+	public static final long M = K*K;
 	
 	public static final int PERCENT = 100;
 	
-	public static final int SLEEP_TIME = 1000;
+	/**单位秒*/
+	public static int SLEEP_TIME = 1;
+	
+	
+	public static SystemDto system() throws Exception{
+		SystemDto sDto = new SystemDto();
+		List<DiskDto> disks1=disk(); 
+		List<NetDto> nets1=net(); 
+        Thread.sleep(SLEEP_TIME*1000);
+        List<DiskDto> disks2=disk(); 
+        List<NetDto>nets2=net(); 
+        for(int i=0; i<disks1.size(); i++){
+        	DiskDto disk1 = disks1.get(i);
+        	DiskDto disk2 = disks2.get(i);
+        	disk2.setDiskReads(disk2.getDiskReads()-disk1.getDiskReads());
+        	disk2.setDiskWrites(disk2.getDiskWrites()-disk1.getDiskWrites());
+        }
+        for(int i=0; i<nets1.size(); i++){
+        	NetDto net1 = nets1.get(i);
+        	NetDto net2 = nets2.get(i);
+        	net2.setRxPackets((net2.getRxPackets()-net1.getRxPackets())/SLEEP_TIME);
+        	net2.setTxPackets((net2.getTxPackets()-net1.getTxPackets())/SLEEP_TIME);
+        	net2.setRxBytes((net2.getRxBytes()-net1.getRxBytes())/SLEEP_TIME);
+        	net2.setTxBytes((net2.getTxBytes()-net1.getTxBytes())/SLEEP_TIME);
+        	net2.setRxErrors((net2.getRxErrors()-net1.getRxErrors())/SLEEP_TIME);
+        	net2.setTxErrors((net2.getTxErrors()-net1.getTxErrors())/SLEEP_TIME);
+        	net2.setRxDropped((net2.getRxDropped()-net1.getRxDropped())/SLEEP_TIME);
+        	net2.setTxDropped((net2.getTxDropped()-net1.getTxDropped())/SLEEP_TIME);
+        }
+        sDto.setBaseSystemDto(property()); 
+        sDto.setMemoryDto(memory());
+        sDto.setCpuDtos(cpu());
+        sDto.setDiskDtos(disks2);
+        sDto.setNetDtos(nets2);
+        return sDto;
+	}
 	
 	public static BaseSystemDto property() throws UnknownHostException { 
         Runtime r = Runtime.getRuntime(); 
